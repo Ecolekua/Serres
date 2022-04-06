@@ -1,0 +1,40 @@
+$(document).ready(function(){
+    $(function(){
+        $('#busquedaProyectoxEmpresa_id').on('change', cambioSeleccionEmpresa);
+        $('#proyecto_id').on('change', Cambio_proyecto);
+        $('#contratista_id').on('change',Cambio_contratista);
+    
+    });
+
+    function cambioSeleccionEmpresa(){
+        
+        var empresa_id = $(this).val();
+        //alert('cambio')
+        $.get('/api/Listaproyectos/'+empresa_id+'/empresa', function(info){
+            
+            if (info.length>0){
+                        
+                //document.getElementById("tb-empresasxproyecto").insertRow(-1).innerHTML = '<td></td><td></td><td></td><td></td>';
+            //$("#tb-empresasxproyecto tr").remove(); 
+            $("#tb-proyectoXempresa tr").empty(); 
+            document.getElementById("tb-proyectoXempresa").insertRow(-1).innerHTML = '<td><strong>Id</strong></td><td><strong>Proyecto</strong></td><td><strong>Editar</strong></td>'
+            for (i=0;i<=info.length-1;i++)
+            {
+                document.getElementById("tb-proyectoXempresa").insertRow(-1).innerHTML = '<td>'+info[i].id+'</td><td>'+info[i].proyecto+'</td><td>'+'<a href="proyectos/'+info[i].id+'/edit" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a></td>'
+            }
+        }
+            
+       
+
+        });
+    }
+
+
+    $('#firmarCertificado').click(function(){
+        //alert('presionado')
+        document.getElementById('textareaRechazo').value="OK";
+    });
+
+
+
+});

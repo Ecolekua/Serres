@@ -1,0 +1,81 @@
+@extends('layouts.app')
+
+@section('content')
+<div class="container-fluid" id="divUsers">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">Lista de Documentos
+                    
+                </div>
+
+                <div class="card-body">
+                    @if (session('status'))
+                        <div class="alert alert-success" role="alert">
+                            {{ session('status') }}
+                        </div>
+                    @endif
+
+                    <!-- Contenido -->
+                  
+                    <form action="{{route('comprimirArchivos.zipper')}}" method="POST">
+                        
+                        @csrf
+                        <input type="submit" value="Comprimir Documentos de la Vista" id="zipped" class="btn btn-danger mb-2">   
+                                <table class="table table-hover" id="DatatableZip">
+                        <thead>
+                            <tr>
+                            <th scope="col">Id</th>
+                            <th scope="col">Documento</th>
+                            <!-- <th scope="col">Mes</th>
+                            <th scope="col">Año</th> -->
+                            <th scope="col">Etiquetas</th>
+                            
+                            </tr>
+                        </thead>
+                        <tbody>
+
+                 
+                           
+
+                         @foreach($documentos as $documento)
+                            <tr>
+                                <th scope="row">{{ $documento[0]}}</th>
+                                <th><a href="{{ $documento[4]}}{{ $documento[3] }}" target="_blank">{{ $documento[3] }}</a></th>
+                                <input type="hidden" name="documentos[]" value="{{ $documento[3] }}">
+                                <!-- <th scope="row">{{ $documento[1]}}</th>
+                                <th scope="row">{{ $documento[2]}}</th> -->
+                                <th>
+                                
+                                <button type="button" class="btn btn-outline-info btn-sm">{{$documento[5]}}</button>
+                                </th>
+                                                               
+                              </tr> 
+                        @endforeach    
+
+                        @foreach($certs as $certificado)
+                            <th scope="row">{{ $certificado[0]}}</th>
+                            <th scope="row"> <a href="<?php echo 'http://www.serresverificadora.cl/administrador/generador_certificado.php?ncert='.$certificado[5] ?>" target="_blank">Rut Empresa Certificada: {{ $certificado[1]}} Periodo {{ $certificado[3]}}/{{ $certificado[4]}}</a></th>
+                            <th scope="row"><button type="button" class="btn btn-outline-info btn-sm">Certificado</button><button type="button" class="btn btn-outline-info btn-sm">{{ $certificado[2]}}</button></th>
+                        @endforeach
+
+                        </tbody>
+                        <tfoot>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <!-- <th></th>
+                            <th></th> -->
+                           
+                        </tfoot>
+                    </table>
+                    <!-- fin contenido  -->
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@endsection

@@ -1,0 +1,80 @@
+$(document).ready(function(){
+    $(function(){
+        $('#busquedaProyectoxEmpresa_id').on('change', cambioSeleccionEmpresa);
+        $('#proyecto_id').on('change', Cambio_proyecto);
+        $('#contratista_id').on('change',Cambio_contratista);
+        $('#busquedaDocumentosXmandante').on('change',documentosXmandante);
+        //$('#zipped').on('click',ComprimirArchivosGestor);
+    });
+    // function ComprimirArchivosGestor(){
+    //     var documentos = $('#documentos').val();
+    //     alert(documentos);
+    // }
+    function cambioSeleccionEmpresa(){
+        
+        var empresa_id = $(this).val();
+    
+        $.get('/api/Listaproyectos/'+empresa_id+'/empresa', function(info){
+            
+            if (info.length>0){
+             
+            $("#tb-proyectoXempresa tr").empty(); 
+            document.getElementById("tb-proyectoXempresa").insertRow(-1).innerHTML = '<td><strong>Id</strong></td><td><strong>Proyecto</strong></td><td><strong>Editar</strong></td>'
+            for (i=0;i<=info.length-1;i++)
+            {
+                document.getElementById("tb-proyectoXempresa").insertRow(-1).innerHTML = '<td>'+info[i].id+'</td><td>'+info[i].proyecto+'</td><td>'+'<a href="proyectos/'+info[i].id+'/edit" class="btn btn-sm btn-warning"><i class="fas fa-edit"></i></a></td>'
+            }
+        }
+            
+       
+
+        });
+    }
+
+
+    $('#firmarCertificado').click(function(){
+        //alert('presionado')
+        document.getElementById('textareaRechazo').value="OK";
+    });
+    $('#verCertificadoR').click(function(){
+        //alert('presionado')
+        document.getElementById('textareaRechazo').value=" ";
+    });
+
+    function documentosXmandante(){
+        var empresa_id = $(this).val();
+        $.get('/api/documento/'+empresa_id+'/mandante',function(resultado){
+            //var docs =  new Array(); 
+        if (resultado!=1){
+             var $fila='';
+             for (i=0;i<=resultado.length-1;i++)
+             {
+             $fila+="<tr><th>"+resultado[i][0]+"</th><th><a href='"+resultado[i][8]+resultado[i][1]+"' target='_blank'>"+resultado[i][1]+"</a></th><th>"+resultado[i][2] +"</th><th>"+resultado[i][3]+"</th><th>"+resultado[i][4] +"</th><th>"+resultado[i][5] +"</th><th>"+resultado[i][6]+"</th><th><center><a href='/editar/"+resultado[i][7]+"/documentos' class='btn btn-sm btn-warning'><i class='fas fa-edit'></i></a></center></th><th><center><a class='btn btn-sm btn-danger' href='javascript:EliminarDocumento("+resultado[i][7]+");'><i class='fa fa-trash'></i></a></center></th><th><input type='hidden' name='documentos[]' value='"+resultado[i][1]+"'></th></tr>";
+             //docs.push(resultado[i][1]);
+            }
+            // document.getElementById('documentos').value=docs;
+             var table = $('#DatatableZip').DataTable();
+             table.destroy();
+         
+             $("#DatatableZip tbody").html($fila);
+             $("#DatatableZip").DataTable({
+                 language:{search:"Buscar"},
+                 "pageLength": 100,
+                 paging: true,
+                 searching: true,
+                 dom: 'Bfrtip',
+                 buttons: [
+                     'copyHtml5',
+                     'excelHtml5',
+                     'csvHtml5',
+                     'pdfHtml5'
+                 ]
+             });
+        }else{
+            alert("No existen Documentos para Descargar");
+        }
+          
+        });
+    }
+
+});

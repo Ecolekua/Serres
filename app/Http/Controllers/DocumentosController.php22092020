@@ -1,0 +1,240 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use App\documento;
+use Carbon\Carbon;
+use Conner\Tagging\Model\Tag;
+use Conner\Tagging\Model\Tagged;
+use App\registro;
+use App\empresa;
+use App\estructura;
+use App\detalleregistro;
+use Conner\Tagging\Model\TagGroup;
+use Alert;
+class DocumentosController extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+
+    public $matrizTgas=array();
+    public $observacion;
+    public $estructura_id;
+    
+    public $proyecto_id;
+    public $contrato;
+    public $anio;
+    public $mes;
+    public $leyenda;
+    public $EmpresaPrincipal='Empresa Principal';
+
+    public function index()
+    {
+        
+        $documentos=documento::all();
+        return view('Documentos.index',compact('documentos'));
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     *
+     * @return \Illuminate\Http\Response
+     */
+    public function create()
+    {
+        $etiquetas=Tag::all();
+        $empresas=empresa::where('tipoEmpresa',$this->EmpresaPrincipal)->orderBy('rut', 'DESC')->get();
+        $groups=TagGroup::all();
+        $idCarga=registro::create([
+            'observacion'=>'Carga de Documentación',
+        ]);
+        
+
+        $RegistroCarga=$idCarga->id;
+
+        return view('Documentos.create',compact('etiquetas','empresas','groups','RegistroCarga'));
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        
+          $nombreArchivo = $request->file('file')->getClientOriginalName();
+          $this->matrizArchivo=explode('_',$nombreArchivo);
+
+        //   $this->anio=$this->matrizArchivo[0];
+        //   $this->mes=$this->matrizArchivo[1];
+          $this->contrato=$request->input('contrato_id');
+            
+        $this->proyecto_id=$request->input('proyecto_id');
+
+        $estructuras=estructura::where('contrato',$this->contrato)->where('proyecto_id',$this->proyecto_id)->get();
+
+        if($estructuras->isEmpty()){
+                $this->leyenda="El Contrato ".$this->contrato." no existe o no pertenece al Proyecto";
+                $detalleArchivo=detalleregistro::create([
+                'registro_id'=>$request->idRegistro,
+                'nombreArchivo'=>$nombreArchivo,
+                'detalle'=>$this->leyenda,
+                ]);
+                
+        }else{
+        
+        
+                    foreach($estructuras as $estructura){
+                        $this->estructura_id=$estructura->id;
+                    }
+
+        
+                    $this->matrizTags=explode(',',$request->input('tags'));
+
+                    $this->fechaActual= new \DateTime();
+                    $this->observacion="Carga Masiva";
+            
+
+                if($request->hasFile('file')) {
+                    
+                    $nombreFile = $request->file('file')->getClientOriginalName();
+                    
+                    //no Upload path
+                    $destinationPath = 'Archivos/Cargados/'.$this->estructura_id."/".$this->anio."/".$this->mes."/";
+            
+                    // Create directory if not exists
+                    if (!file_exists($destinationPath)) {
+                        mkdir($destinationPath, 0755, true);
+                    }
+            
+                    // Get file extension
+                   
+                    $extension = $request->file('file')->getClientOriginalExtension();
+                  
+                    // Valid extensions
+                    $validextensions = array("jpeg","jpg","png","pdf","JPG","rar","csv","CSV","XLSX","xlsx");
+            
+                    // Check extension
+
+                    if(in_array(strtolower($extension), $validextensions)){
+            
+
+                        // Rename file 
+                        $fileName = str_slug($nombreFile.Carbon::now()->toDayDateTimeString()).rand(111111, 999999).'.' . $extension; //$request->input('tags').
+                        if($estructuras->isEmpty()){
+                            return back();
+                            
+                        }
+                        // Uploading file to given path
+                        $request->file('file')->move($destinationPath, $fileName); 
+            
+                        $documentos=documento::create([
+                        'documento'=>$fileName,
+                        'ubicacion'=>$destinationPath,
+                        'estructura_id'=>$this->estructura_id,
+                        // 'mes'=>$this->mes,
+                        // 'anio'=>$this->anio,
+                        'registro_id'=>$request->idRegistro,
+
+                        ]);
+
+                        $documentos->tag($this->matrizTags);
+                        
+                    }
+        
+                }
+            }
+         
+    }
+
+    /**
+     * Display the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function show($id)
+    {
+        //
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function edit($id)
+    {
+        $valor='';
+        $etiquetas=Tag::all();
+        $documento=documento::where('id',$id)->get();
+        return view('Documentos.edit',compact('documento','valor','etiquetas'));
+    }
+
+    /**
+     * Update the specified resource in storage.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function update(Request $request)
+    {
+        
+        $borrar=tagged::where('taggable_id',$request->id)->delete();
+        
+        $this->matrizTags=explode(',',$request->input('tags'));
+        $elementos=count($this->matrizTags);
+
+            for($i=0;$i<$elementos;$i++)
+            {
+                if ($this->matrizTags[$i]!='')
+                {   
+                    $str = strtolower($this->matrizTags[$i]);
+                    //dd($request->id);
+                    $id=Tagged::create([
+                        'taggable_id'=>$request->id,
+                        'taggable_type'=>'App\documento',
+                        'tag_name'=>$this->matrizTags[$i],
+                        'tag_slug'=>$str,
+                    ]);
+                };
+            };
+            
+        Alert::success('Documento Actualizado correctamente...');
+        $documentos=documento::all();
+        return view('Documentos.index',compact('documentos'));
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        $borrar=documento::where('id',$id)->delete();
+        return 1;
+    }
+
+
+    public function cargaeinformes(){
+        return view('Documentos.cargaeinformes');
+    }
+
+    public function destroyMasiva($id){
+        $borrarMasivo=documento::where('registro_id',$id)->delete();
+        //Alert::success('Documentos Eliminados correctamente...');
+        return 1;
+    }
+    
+ 
+}

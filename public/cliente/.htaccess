@@ -1,0 +1,2 @@
+RewriteRule ^(.*).aspx$ /$1 [R=301,L]
+
